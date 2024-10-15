@@ -3,7 +3,11 @@ package com.yilmaz.ledcontroller.features.led_control.data
 import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothDevice.TRANSPORT_LE
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
@@ -44,6 +48,10 @@ class LedControllerImpl(
     override val isPairing: StateFlow<Boolean>
         get() = _isPairing.asStateFlow()
 
+    private val _isConnected = MutableStateFlow(false)
+    override val isConnected: StateFlow<Boolean>
+        get() = _isConnected.asStateFlow()
+
     private val _isBluetoothEnabled = MutableStateFlow(false)
     override val isBluetoothEnabled: StateFlow<Boolean>
         get() = _isBluetoothEnabled.asStateFlow()
@@ -58,6 +66,7 @@ class LedControllerImpl(
 
     private var isScanning = false
     private var isPairDeviceReceiverRegistered = false
+    private var bluetoothGatt: BluetoothGatt? = null
 
     private val leScanCallback: ScanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
@@ -84,8 +93,8 @@ class LedControllerImpl(
             _isPairing.update { true }
             _isPaired.update { true }
         },
-        onPairedSuccessfully = { device ->
-            setMessage("Connected to ${device?.address}")
+        onPairedSuccessfully = { _ ->
+            setMessage("Paired successfully")
             _isPaired.update { true }
             _isPairing.update { false }
             stopScan()
@@ -101,6 +110,32 @@ class LedControllerImpl(
             _isPaired.update { true }
         }
     )
+
+    private val gattCallback = object : BluetoothGattCallback() {
+
+        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                if (newState == BluetoothProfile.STATE_CONNECTED) {
+                    setMessage("Successfully connected to ${gatt.device.address}")
+                    _isConnected.update { true }
+                    _deviceName.update { gatt.device.name }
+                    gatt.discoverServices()
+
+                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                    setMessage("Successfully disconnected from ${gatt.device.address}")
+                    _isConnected.update { false }
+                    _deviceName.update { "" }
+                    gatt.close()
+                }
+
+            } else {
+                setMessage("Error $status encountered for ${gatt.device.address}")
+                _isConnected.update { false }
+                _deviceName.update { "" }
+                gatt.close()
+            }
+        }
+    }
 
     init {
         isPaired()
@@ -123,6 +158,29 @@ class LedControllerImpl(
 
     override fun pair() {
         startScan()
+    }
+
+    override fun release() {
+        disconnect()
+
+        if (isPairDeviceReceiverRegistered) context.unregisterReceiver(pairDeviceReceiver)
+    }
+
+    override fun connect() {
+        val device = bluetoothAdapter?.getRemoteDevice(DEVICE_ADDRESS)
+        bluetoothGatt = device?.connectGatt(context, false, gattCallback, TRANSPORT_LE)
+
+        stopScan()
+    }
+
+    override fun disconnect() {
+        bluetoothGatt?.disconnect()
+        bluetoothGatt?.close()
+
+        _isConnected.update { false }
+        _deviceName.update { "" }
+
+        setMessage("Successfully disconnected from ${bluetoothGatt?.device?.address}")
     }
 
     private fun startScan() {

@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.StateFlow
 interface LedController {
     val isPaired: StateFlow<Boolean>
     val isPairing: StateFlow<Boolean>
+    val isConnected: StateFlow<Boolean>
     val isBluetoothEnabled: StateFlow<Boolean>
     val deviceName: StateFlow<String>
     val message: SharedFlow<String>
@@ -13,4 +14,10 @@ interface LedController {
     fun isPaired()
 
     fun pair()
+
+    fun connect()
+
+    fun disconnect()
+
+    fun release()
 }

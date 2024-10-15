@@ -19,9 +19,17 @@ class HomeViewModel @Inject constructor(
     val state = _state
 
     init {
+        getMessage()
         getIsBluetoothEnabled()
         getIsPairing()
         getIsPaired()
+        getIsConnected()
+    }
+
+    private fun getMessage() {
+        ledController.message.onEach { m ->
+            _state.update { it.copy(message = m) }
+        }.launchIn(viewModelScope)
     }
 
     private fun getIsPaired() {
@@ -36,21 +44,40 @@ class HomeViewModel @Inject constructor(
         }.launchIn(viewModelScope)
     }
 
+    private fun getIsConnected() {
+        ledController.isConnected.onEach { c ->
+            _state.update { it.copy(isConnected = c) }
+        }.launchIn(viewModelScope)
+    }
+
     private fun getIsBluetoothEnabled() {
         ledController.isBluetoothEnabled.onEach { isEnabled ->
             _state.update { it.copy(isBluetoothEnabled = isEnabled) }
         }.launchIn(viewModelScope)
     }
 
-    fun updateIsBluetoothEnabled(enabled:Boolean){
+    fun updateIsBluetoothEnabled(enabled: Boolean) {
         _state.update { it.copy(isBluetoothEnabled = enabled) }
     }
 
-    fun isPaired(){
+    fun isPaired() {
         ledController.isPaired()
     }
 
-    fun pair(){
+    fun pair() {
         ledController.pair()
+    }
+
+    fun connect() {
+        ledController.connect()
+    }
+
+    fun disconnect() {
+        ledController.disconnect()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        ledController.release()
     }
 }
