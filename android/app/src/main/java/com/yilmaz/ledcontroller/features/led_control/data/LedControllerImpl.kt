@@ -15,6 +15,7 @@ import android.content.Context
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import com.yilmaz.ledcontroller.features.led_control.data.receiver.PairDeviceReceiver
 import com.yilmaz.ledcontroller.features.led_control.domain.LedController
 import com.yilmaz.ledcontroller.features.led_control.domain.model.LedControlModel
@@ -148,9 +149,9 @@ class LedControllerImpl(
         ) {
             super.onCharacteristicWrite(gatt, characteristic, status)
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                setMessage("Change mode request sent successfully")
+                Log.i("gattCallback", "Change mode request sent successfully")
             } else {
-                setMessage("Failed to send led control model data -> status: $status")
+                Log.i("gattCallback", "Failed to send led control model data -> status: $status")
             }
         }
     }
