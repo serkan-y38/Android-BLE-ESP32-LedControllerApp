@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothDevice.TRANSPORT_LE
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
+import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.ScanCallback
@@ -16,6 +17,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import com.yilmaz.ledcontroller.features.led_control.data.receiver.PairDeviceReceiver
 import com.yilmaz.ledcontroller.features.led_control.domain.LedController
+import com.yilmaz.ledcontroller.features.led_control.domain.model.LedControlModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -26,6 +28,9 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.util.UUID
 
 @SuppressLint("MissingPermission")
 class LedControllerImpl(
@@ -135,6 +140,19 @@ class LedControllerImpl(
                 gatt.close()
             }
         }
+
+        override fun onCharacteristicWrite(
+            gatt: BluetoothGatt?,
+            characteristic: BluetoothGattCharacteristic?,
+            status: Int
+        ) {
+            super.onCharacteristicWrite(gatt, characteristic, status)
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                setMessage("Change mode request sent successfully")
+            } else {
+                setMessage("Failed to send led control model data -> status: $status")
+            }
+        }
     }
 
     init {
@@ -181,6 +199,30 @@ class LedControllerImpl(
         _deviceName.update { "" }
 
         setMessage("Successfully disconnected from ${bluetoothGatt?.device?.address}")
+    }
+
+    override fun updateLedMode(ledControlModel: LedControlModel) {
+        val service = bluetoothGatt?.getService(UUID.fromString(SERVICE_UUID))
+        val characteristic = service?.getCharacteristic(UUID.fromString(CHARACTERISTIC_UUID))
+
+        characteristic?.let {
+            val data = Json.encodeToString(ledControlModel).encodeToByteArray()
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                bluetoothGatt?.writeCharacteristic(
+                    it,
+                    data,
+                    BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                it.value = data
+                @Suppress("DEPRECATION")
+                bluetoothGatt?.writeCharacteristic(it)
+            }
+        } ?: run {
+            setMessage("Characteristic not found!")
+        }
     }
 
     private fun startScan() {
@@ -275,5 +317,7 @@ class LedControllerImpl(
 
     companion object {
         private const val DEVICE_ADDRESS = ""
+        private const val SERVICE_UUID = "22bf526e-1f59-40fb-a344-0bea8c1bfef2"
+        private const val CHARACTERISTIC_UUID = "cdc7651d-88bd-4c0d-8c90-4572db5aa14b"
     }
 }

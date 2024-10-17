@@ -3,6 +3,7 @@ package com.yilmaz.ledcontroller.features.led_control.presentation.screen.home_s
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yilmaz.ledcontroller.features.led_control.domain.LedController
+import com.yilmaz.ledcontroller.features.led_control.domain.model.LedControlModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -24,6 +25,7 @@ class HomeViewModel @Inject constructor(
         getIsPairing()
         getIsPaired()
         getIsConnected()
+        getDeviceName()
     }
 
     private fun getMessage() {
@@ -56,6 +58,12 @@ class HomeViewModel @Inject constructor(
         }.launchIn(viewModelScope)
     }
 
+    private fun getDeviceName() {
+        ledController.deviceName.onEach { deviceName ->
+            _state.update { it.copy(deviceName = deviceName) }
+        }.launchIn(viewModelScope)
+    }
+
     fun updateIsBluetoothEnabled(enabled: Boolean) {
         _state.update { it.copy(isBluetoothEnabled = enabled) }
     }
@@ -74,6 +82,10 @@ class HomeViewModel @Inject constructor(
 
     fun disconnect() {
         ledController.disconnect()
+    }
+
+    fun updateLedMode(ledControlModel: LedControlModel){
+        ledController.updateLedMode(ledControlModel)
     }
 
     override fun onCleared() {

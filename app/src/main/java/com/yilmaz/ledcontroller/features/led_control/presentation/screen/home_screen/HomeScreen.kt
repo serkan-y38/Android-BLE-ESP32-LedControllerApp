@@ -85,7 +85,8 @@ fun HomeScreen(
                 LedControlScreen(
                     innerPadding = innerPadding,
                     onDisconnect = { viewModel.disconnect() },
-                    deviceName = state.deviceName
+                    deviceName = state.deviceName,
+                    onUpdateMode = { viewModel.updateLedMode(it) }
                 )
             }
 

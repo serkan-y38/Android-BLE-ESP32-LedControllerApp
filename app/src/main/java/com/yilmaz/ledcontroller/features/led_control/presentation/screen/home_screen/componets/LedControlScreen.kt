@@ -1,7 +1,6 @@
 package com.yilmaz.ledcontroller.features.led_control.presentation.screen.home_screen.componets
 
 import android.content.res.Configuration
-import android.provider.CalendarContract.Colors
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,6 +25,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,9 +35,19 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.yilmaz.ledcontroller.R
+import com.yilmaz.ledcontroller.features.led_control.domain.model.LedControlModel
 
 @Composable
-fun LedControlScreen(innerPadding: PaddingValues, onDisconnect: () -> Unit, deviceName: String) {
+fun LedControlScreen(
+    innerPadding: PaddingValues,
+    deviceName: String,
+    onDisconnect: () -> Unit,
+    onUpdateMode: (LedControlModel) -> Unit,
+) {
+
+    val lastSelectedStaticColor = remember {
+        mutableStateOf(LedModes.RED)
+    }
 
     Column(
         modifier = Modifier
@@ -54,6 +65,16 @@ fun LedControlScreen(innerPadding: PaddingValues, onDisconnect: () -> Unit, devi
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.weight(1f)
             )
+            IconButton(onClick = {
+                onUpdateMode(
+                    LedControlModel(mode = LedModes.TURN_OFF.name)
+                )
+            }) {
+                Icon(
+                    painter = painterResource(R.drawable.baseline_power_settings_new_24),
+                    contentDescription = "Disconnect"
+                )
+            }
             IconButton(onClick = { onDisconnect() }) {
                 Icon(
                     imageVector = Icons.Default.Close,
@@ -73,9 +94,24 @@ fun LedControlScreen(innerPadding: PaddingValues, onDisconnect: () -> Unit, devi
                         .wrapContentHeight()
                         .padding(top = 16.dp)
                 ) {
-                    LedItem(onTap = {}, color = Color.Red)
-                    LedItem(onTap = {}, color = Color.Green)
-                    LedItem(onTap = {}, color = Color.Blue)
+                    LedItem(onTap = {
+                        lastSelectedStaticColor.value = LedModes.RED
+                        onUpdateMode(
+                            LedControlModel(mode = lastSelectedStaticColor.value.name)
+                        )
+                    }, color = Color.Red)
+                    LedItem(onTap = {
+                        lastSelectedStaticColor.value = LedModes.GREEN
+                        onUpdateMode(
+                            LedControlModel(mode = lastSelectedStaticColor.value.name)
+                        )
+                    }, color = Color.Green)
+                    LedItem(onTap = {
+                        lastSelectedStaticColor.value = LedModes.BLUE
+                        onUpdateMode(
+                            LedControlModel(mode = lastSelectedStaticColor.value.name)
+                        )
+                    }, color = Color.Blue)
                 }
             }
             item {
@@ -86,9 +122,46 @@ fun LedControlScreen(innerPadding: PaddingValues, onDisconnect: () -> Unit, devi
                         .padding(top = 24.dp)
                         .wrapContentHeight()
                 ) {
-                    LedItem(onTap = {}, color = Color.Magenta)
-                    LedItem(onTap = {}, color = Color.Yellow)
-                    LedItem(onTap = {}, color = Color.Cyan)
+                    LedItem(onTap = {
+                        lastSelectedStaticColor.value = LedModes.MAGENTA
+                        onUpdateMode(
+                            LedControlModel(mode = lastSelectedStaticColor.value.name)
+                        )
+                    }, color = Color.Magenta)
+                    LedItem(onTap = {
+                        lastSelectedStaticColor.value = LedModes.YELLOW
+                        onUpdateMode(
+                            LedControlModel(mode = lastSelectedStaticColor.value.name)
+                        )
+                    }, color = Color.Yellow)
+                    LedItem(onTap = {
+                        lastSelectedStaticColor.value = LedModes.CYAN
+                        onUpdateMode(
+                            LedControlModel(mode = lastSelectedStaticColor.value.name)
+                        )
+                    }, color = Color.Cyan)
+                }
+            }
+            item {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 24.dp)
+                        .wrapContentHeight()
+                ) {
+                    LedItem(onTap = {
+                        lastSelectedStaticColor.value = LedModes.WHITE
+                        onUpdateMode(
+                            LedControlModel(mode = lastSelectedStaticColor.value.name)
+                        )
+                    }, color = Color.White)
+                    LedItem(onTap = {
+
+                    }, color = Color.Gray)
+                    LedItem(onTap = {
+
+                    }, color = Color.Gray)
                 }
             }
             item {
@@ -100,10 +173,23 @@ fun LedControlScreen(innerPadding: PaddingValues, onDisconnect: () -> Unit, devi
             }
             item {
                 Column {
-                    AnimationItem(onTap = {}, animation = "Fade")
-                    AnimationItem(onTap = {}, animation = "RGB")
-                    AnimationItem(onTap = {}, animation = "Flash")
-                    AnimationItem(onTap = {}, animation = "Rainbow")
+                    AnimationItem(onTap = {
+                        onUpdateMode(LedControlModel(mode = LedModes.FADE.name))
+                    }, animation = "Fade")
+                    AnimationItem(onTap = {
+                        onUpdateMode(LedControlModel(mode = LedModes.RGB.name))
+                    }, animation = "RGB")
+                    AnimationItem(onTap = {
+                        onUpdateMode(
+                            LedControlModel(
+                                mode = lastSelectedStaticColor.value.name,
+                                isFlashEnabled = true
+                            )
+                        )
+                    }, animation = "Flash")
+                    AnimationItem(onTap = {
+                        onUpdateMode(LedControlModel(mode = LedModes.RAINBOW.name))
+                    }, animation = "Rainbow")
                 }
             }
         }
@@ -158,6 +244,20 @@ fun AnimationItem(onTap: () -> Unit, animation: String) {
     }
 }
 
+enum class LedModes {
+    RED,
+    GREEN,
+    BLUE,
+    MAGENTA,
+    YELLOW,
+    CYAN,
+    WHITE,
+    FADE,
+    RGB,
+    RAINBOW,
+    TURN_OFF
+}
+
 @Preview(
     showBackground = true,
     showSystemUi = true,
@@ -167,6 +267,10 @@ fun AnimationItem(onTap: () -> Unit, animation: String) {
 @Composable
 fun Preview(modifier: Modifier = Modifier) {
     Scaffold {
-        LedControlScreen(innerPadding = it, onDisconnect = {}, deviceName = "ESP32")
+        LedControlScreen(
+            innerPadding = it,
+            onDisconnect = {},
+            deviceName = "ESP32",
+            onUpdateMode = {})
     }
 }

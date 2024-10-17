@@ -1,5 +1,6 @@
 package com.yilmaz.ledcontroller.features.led_control.domain
 
+import com.yilmaz.ledcontroller.features.led_control.domain.model.LedControlModel
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -20,4 +21,6 @@ interface LedController {
     fun disconnect()
 
     fun release()
+
+    fun updateLedMode(ledControlModel: LedControlModel)
 }
