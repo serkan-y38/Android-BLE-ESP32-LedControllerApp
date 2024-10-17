@@ -233,5 +233,5 @@ void loop() {
   else if (strcmp(currentMode, "WHITE") == 0) white();
   else if (strcmp(currentMode, "FADE") == 0) fade();
   else if (strcmp(currentMode, "RGB") == 0) rgb();
-  else rainbow();
+  else if (strcmp(currentMode, "RAINBOW") == 0) rainbow();
 }
